@@ -24,6 +24,48 @@
 本章で行ったアップグレード作業は実話なのだが、作業自体は 2015 年 11 月時点での出来事である。その後、 Liberty リリースは幾度かのポイントリリースを経ているので、その中で今回遭遇した事象はもしかしたら解消されているかもしれない。が、我々には同じことをもう一度行う体力は残っていない。よって、 Liberty リリースを使ってこれからアップグレードを検討するという奇特なエンジニアの皆々様は、是非元記事であるQiita記事のコメント欄にその結果をご報告いただきたい。
 
 \section{はじめに}
+先日、 OpenStack 環境を Juno から Liberty に一気にアップグレードしてみた。なんでそんなことしたのかっていうと、先日の OpenStack Summit Tokyo で PayPal が Folsom から Kilo までアップグレードしたっていうセッション見たら、自分にもできるって思ったからだ。
+
+いや、結果、アップグレードできたんだけどさ。まぁそんなわけで、見事に人柱になれたと思うので、ここではその時のことを記すことにした。
+
+\noindent
+なお、そんな PayPal 様のセッションはこちら。
+
+\begin{quote}
+PayPal's Cloud Journey From Folsom to Kilo -- What We Learned in the Upgrade
+\end{quote}
+
+なお、アップグレード前の構成は、 OS が Ubuntu 14.04 、 OpenStack のバージョンが Juno 、 Hypervisor が KVM 、 Neutron Driver が VLAN + OVS で L3 Agent は稼働させていない構成となる。
+
+\section{アップグレード}
+Keystone、 Glance、 Nova、 Neutron の順番でやるのが一般的なんじゃないだろうか。 Design Summit では、各コンポーネントでバージョンがバラバラだって言う企業もいたから、順番は参考程度なんだが、全コンポーネントをアップグレードするならこの順番がいいと思う。ちなみに、無停止アップグレードは絶対無理だからアキラメロン。って、 Design Summit に居たハッカーのおっちゃんたちが言っとりました。おっしゃる通りでございます。
+
+\noindent
+{\bf . . . 閑話休題 . . . }
+
+\subsection{ロードバランサの紐付け解除}
+\subsection{Liberty リポジトリ導入}
+\subsection{Keystone 前準備}
+\subsection{データベースのバックアップ}
+\subsection{Keystone アップグレード}
+\subsection{Glance アップグレード}
+\subsection{nova-api アップグレード (Nova db sync 失敗編)}
+\subsubsection{まずは一気に Liberty までアップグレードしてみる}
+\subsubsection{奇妙な nova-manage のオプション}
+\subsubsection{apt 壊れた}
+
+\subsection{nova-api アップグレード (Nova db sync 成功編)}
+\subsection{neutron-server アップグレード}
+\subsection{Nova / Neutron の残りのパッケージのアップグレード}
+\subsection{ロードバランサの紐付け}
+\subsection{Horizon アップグレード}
+\subsubsection{deb パッケージの謎}
+\subsection{アップグレードの終わり}
+
+\section{その後の話}
+\subsection{RFC3442 (クラスレス静的ルート) 問題}
+
+\section{アップグレード作業から得た教訓}
 
 \chapter{あとがき}
 
