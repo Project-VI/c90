@@ -44,12 +44,103 @@ Keystone、 Glance、 Nova、 Neutron の順番でやるのが一般的なんじ
 {\bf . . . 閑話休題 . . . }
 
 \subsection{ロードバランサの紐付け解除}
+Keystoneのフロントにあるロードバランサの5000番ポートに対する紐付けを解除し、完全に外部からの通信を止める。35357番ポートはそのままで問題ないと思われる。
+
 \subsection{Liberty リポジトリ導入}
+まずは、全てのサーバにLibertyリリースのリポジトリを入れよう。
+
+\begin{lstlisting}
+  $ sudo echo "deb http://ubuntu-cloud.archive.canonical.com/ubuntu \
+    trusty-updates/liberty main" \
+    > /etc/apt/sources.list.d/cloudarchive-liberty.list
+  $ sudo apt-get update
+\end{lstlisting}
+
 \subsection{Keystone 前準備}
+KeystoneのDBに溜まっているtokenを削除する。LibertyからはデフォルトでMemcachedをtoken用途で利用するようになっているので、そちらを使うことにした。つまり、事前にMemcached用サーバを用意する必要がある。
+
+\begin{lstlisting}
+  $ sudo su -s /bin/sh -c "keystone-manage token_flush" keystone
+\end{lstlisting}
+
+\noindent
+DBのTokenを綺麗に消したら次は定期実行していたCronを停止する。
+
+\begin{lstlisting}
+  $ sudo crontab -e -u keystone
+\end{lstlisting}
+
+\noindent
+以下の行を削除する。
+
+\begin{lstlisting}
+  @hourly /usr/bin/keystone-manage token_flush > \
+  /var/log/keystone/keystone-tokenflush.log 2>&1
+\end{lstlisting}
+
+\noindent
+潔く、Keystoneを止めましょう。
+
+\begin{lstlisting}
+  $ sudo service keystone stop
+\end{lstlisting}
+
 \subsection{データベースのバックアップ}
+DBサーバにログインして以下のコマンドでDBのバックアップを取得する。
+
+\begin{lstlisting}
+  $ sudo mysqldump -uroot -p --opt --add-drop-database \
+    --single-transaction --master-data=2 keystone > \
+    liberty-keytone-db-backup.sql
+  $ sudo mysqldump -uroot -p --opt --add-drop-database \
+    --single-transaction --master-data=2 glance > \
+    liberty-glance-db-backup.sql
+  $ sudo mysqldump -uroot -p --opt --add-drop-database \
+    --single-transaction --master-data=2 nova > \
+    liberty-nova-db-backup.sql
+  $ sudo mysqldump -uroot -p --opt --add-drop-database \
+    --single-transaction --master-data=2 neutron > \
+    liberty-neutron-db-backup.sql
+\end{lstlisting}
+
 \subsection{Keystone アップグレード}
+ここでKeystoneのアップグレードを行う。いろんなパラメータが新規に追加されたり廃止予定になったりしているが、それについては書ききれないのでConfiguration Referenceを参照してほしい。アップグレード自体は、apt-get install XXXXして、その後、keystone.confを書き換えて、プロセスを起動するだけである。基本的にはインストール手順のとおりに行えば問題ない(はず)。
+
+ちなみに、confにDEBUGオプションを入れていると、プロセス起動直後のログに、confの各項目に何の値が設定されているのかが全て出力される。親切なことに、廃止予定の項目も指摘してくれる。これは全コンポーネント共通の仕組みなので、覚えておいて損はない。そういえば、Novaのusernameという項目で、usernameは廃止予定だから使うのやめてuser-nameを使えってログに出ていたから、使うのやめてuser-name使ったらエラー吐きまくってNovaが動かなくなった。ツンデレか。話が逸れた。
+
+keystone.confを配置したら以下のコマンドでLibertyリリースまでDBのスキーマのマイグレーションを行う。Kilo以降、KeystoneはApacheで稼働するようになったので、事前にKeystoneプロセスが止まっていることを確認してApacheを起動しておこう。
+
+\begin{lstlisting}
+  $ sudo service keystone stop
+  $ sudo service apache2 restart
+  $ sudo su -s /bin/sh -c "keystone-manage db_sync" keystone
+\end{lstlisting}
+
+エラーが出なければKeystoneのアップグレードは完了である。一応、openstackコマンドが実行可能かどうかを確認しておこう。
+
+\begin{lstlisting}
+  $ ADMIN_TOKEN=${keystone.confに記載されているadmin_tokenの文字列}
+  $ export OS_TOKEN=${ADMIN_TOKEN}
+  $ export OS_URL=http://${Keystoneが稼働しているどれかのサーバのIPアドレス}:35357/v3
+  $ export OS_IDENTITY_API_VERSION=3
+  $ openstack service list
+\end{lstlisting}
+
 \subsection{Glance アップグレード}
+Keystone同様にConfiguration Referenceや公式のインストールガイドを確認しながら、環境にあったglance-api.conf、glance-registry.confを配置しよう。その後、Glanceのdb syncを行う。
+
+\begin{lstlisting}
+  $ sudo service glance-api restart
+  $ sudo service glance-registry restart
+  $ sudo su -s /bin/sh -c "glance-manage db_sync" glance
+\end{lstlisting}
+
+\noindent
+エラーが出なければGlanceのアップグレードは完了である。
+
 \subsection{nova-api アップグレード (Nova db sync 失敗編)}
+最大の難関である。NovaのDBを上手くLibertyまでマイグレーション出来ればアップグレードできたも同然である。がしかし、現実はそうそう上手くはいかなかった。なので、この項ではアップグレードが上手くいかなかった時の状況をそのまま記すことにした。
+
 \subsubsection{まずは一気に Liberty までアップグレードしてみる}
 \subsubsection{奇妙な nova-manage のオプション}
 \subsubsection{apt 壊れた}
