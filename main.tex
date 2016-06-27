@@ -26,7 +26,7 @@
 \section{はじめに}
 先日、 OpenStack 環境を Juno から Liberty に一気にアップグレードしてみた。なんでそんなことしたのかっていうと、先日の OpenStack Summit Tokyo で PayPal が Folsom から Kilo までアップグレードしたっていうセッション見たら、自分にもできるって思ったからだ。
 
-いや、結果、アップグレードできたんだけどさ。まぁそんなわけで、見事に人柱になれたと思うので、ここではその時のことを記すことにした。
+いや、結果、アップグレードできたんだけどさ。まぁそんなわけで、見事に人柱になれたと思うので、ここではその時のことを記すことにした。\\[1ex]
 
 \noindent
 なお、そんな PayPal 様のセッションはこちら。
@@ -35,18 +35,23 @@
 PayPal's Cloud Journey From Folsom to Kilo -- What We Learned in the Upgrade
 \end{quote}
 
-なお、アップグレード前の構成は、 OS が Ubuntu 14.04 、 OpenStack のバージョンが Juno 、 Hypervisor が KVM 、 Neutron Driver が VLAN + OVS で L3 Agent は稼働させていない構成となる。
+アップグレード前の構成は、 OS が Ubuntu 14.04 、 OpenStack のバージョンが Juno 、 Hypervisor が KVM 、 Neutron Driver が VLAN + OVS で L3 Agent は稼働させていない構成となる。
 
 \section{アップグレード}
-Keystone、 Glance、 Nova、 Neutron の順番でやるのが一般的なんじゃないだろうか。 Design Summit では、各コンポーネントでバージョンがバラバラだって言う企業もいたから、順番は参考程度なんだが、全コンポーネントをアップグレードするならこの順番がいいと思う。ちなみに、無停止アップグレードは絶対無理だからアキラメロン。って、 Design Summit に居たハッカーのおっちゃんたちが言っとりました。おっしゃる通りでございます。
+Keystone、 Glance、 Nova、 Neutron の順番でやるのが一般的なんじゃないだろうか。 Design Summit では、各コンポーネントでバージョンがバラバラだって言う企業もいたから、順番は参考程度なんだが、全コンポーネントをアップグレードするならこの順番がいいと思う。\\[1ex]
+ちなみに、無停止アップグレードは絶対無理だからアキラメロン。って、 Design Summit に居たハッカーのおっちゃんたちが言っとりました。\\[1ex]
 
 \noindent
-{\bf . . . 閑話休題 . . . }
+おっしゃる通りでございます。\\[1ex]
+
+\noindent
+\textbf{. . . 閑話休題 . . .}
 
 \subsection{ロードバランサの紐付け解除}
 Keystoneのフロントにあるロードバランサの5000番ポートに対する紐付けを解除し、完全に外部からの通信を止める。35357番ポートはそのままで問題ないと思われる。
 
 \subsection{Liberty リポジトリ導入}
+\noindent
 まずは、全てのサーバにLibertyリリースのリポジトリを入れよう。
 
 \begin{lstlisting}
@@ -86,6 +91,7 @@ DBのTokenを綺麗に消したら次は定期実行していたCronを停止す
 \end{lstlisting}
 
 \subsection{データベースのバックアップ}
+\noindent
 DBサーバにログインして以下のコマンドでDBのバックアップを取得する。
 
 \begin{lstlisting}
@@ -106,7 +112,10 @@ DBサーバにログインして以下のコマンドでDBのバックアップ�
 \subsection{Keystone アップグレード}
 ここでKeystoneのアップグレードを行う。いろんなパラメータが新規に追加されたり廃止予定になったりしているが、それについては書ききれないのでConfiguration Referenceを参照してほしい。アップグレード自体は、apt-get install XXXXして、その後、keystone.confを書き換えて、プロセスを起動するだけである。基本的にはインストール手順のとおりに行えば問題ない(はず)。
 
-ちなみに、confにDEBUGオプションを入れていると、プロセス起動直後のログに、confの各項目に何の値が設定されているのかが全て出力される。親切なことに、廃止予定の項目も指摘してくれる。これは全コンポーネント共通の仕組みなので、覚えておいて損はない。そういえば、Novaのusernameという項目で、usernameは廃止予定だから使うのやめてuser-nameを使えってログに出ていたから、使うのやめてuser-name使ったらエラー吐きまくってNovaが動かなくなった。ツンデレか。話が逸れた。
+ちなみに、confにDEBUGオプションを入れていると、プロセス起動直後のログに、confの各項目に何の値が設定されているのかが全て出力される。親切なことに、廃止予定の項目も指摘してくれる。これは全コンポーネント共通の仕組みなので、覚えておいて損はない。そういえば、Novaのusernameという項目で、usernameは廃止予定だから使うのやめてuser-nameを使えってログに出ていたから、使うのやめてuser-name使ったらエラー吐きまくってNovaが動かなくなった。ツンデレか。\\[1ex]
+
+話が逸れた。\\[1ex]
+
 
 keystone.confを配置したら以下のコマンドでLibertyリリースまでDBのスキーマのマイグレーションを行う。Kilo以降、KeystoneはApacheで稼働するようになったので、事前にKeystoneプロセスが止まっていることを確認してApacheを起動しておこう。
 
@@ -127,7 +136,10 @@ keystone.confを配置したら以下のコマンドでLibertyリリースまで
 \end{lstlisting}
 
 \subsection{Glance アップグレード}
-Keystone同様にConfiguration Referenceや公式のインストールガイドを確認しながら、環境にあったglance-api.conf、glance-registry.confを配置しよう。その後、Glanceのdb syncを行う。
+Keystone同様にConfiguration Referenceや公式のインストールガイドを確認しながら、環境にあったglance-api.conf、glance-registry.confを配置しよう。\\[1ex]
+
+\noindent
+その後、Glanceのdb syncを行う。
 
 \begin{lstlisting}
   $ sudo service glance-api restart
@@ -139,11 +151,93 @@ Keystone同様にConfiguration Referenceや公式のインストールガイド�
 エラーが出なければGlanceのアップグレードは完了である。
 
 \subsection{nova-api アップグレード (Nova db sync 失敗編)}
-最大の難関である。NovaのDBを上手くLibertyまでマイグレーション出来ればアップグレードできたも同然である。がしかし、現実はそうそう上手くはいかなかった。なので、この項ではアップグレードが上手くいかなかった時の状況をそのまま記すことにした。
+最大の難関である。NovaのDBを上手くLibertyまでマイグレーション出来ればアップグレードできたも同然である。がしかし、現実はそうそう上手くはいかなかった。\\[1ex]
+
+\noindent
+なので、この項ではアップグレードが上手くいかなかった時の状況をそのまま記すことにした。
 
 \subsubsection{まずは一気に Liberty までアップグレードしてみる}
+\noindent
+まず、nova-apiが稼働しているサーバ上で、nova-apiをLibertyまでアップグレードした。
+
+\begin{lstlisting}
+  $ sudo apt-get install nova-api python-novaclient
+\end{lstlisting}
+
+その後db syncを行って、問題なければそのまま他のコンポーネントもアップグレードして完了となる(\textbf{はずだった})。\\[1ex]
+
+\noindent
+で、以下のコマンドを叩くのだが、
+
+\begin{lstlisting}
+  $ sudo su -s /bin/sh -c "nova-manage db sync" nova
+\end{lstlisting}
+
+\noindent
+エラー発生:(
+
 \subsubsection{奇妙な nova-manage のオプション}
+\noindent
+エラーの内容はこうだ。
+
+\begin{itemize}
+  \item db sync する前にnova-manage db migrate\_flavor\_dataというコマンドを実行しろ
+\end{itemize}
+
+だがしかし、\textbf{実はLibertyリリースのnova-manageコマンドにはこのオプションが入ってないのである。} ソースコードまで読んで調べたが本当になかった。んなアホなと思ったんだが、この時点でDBのスキーマ自体はかなり中途半端に変更されてしまっていた。
+
+\noindent
+この状態で以下のことを行った。
+
+\begin{itemize}
+  \item DBをドロップ(1度目)してリストア
+  \item リポジトリをJunoリリースまで戻してパッケージを再インストール
+\end{itemize}
+
+\noindent
+次に疑ったのが、Kiloリリースである。なので、以下のことを行った。
+
+\begin{itemize}
+  \item Kiloリリースのnova-apiインストール
+  \item nova-manage db migrate\_flavor\_data実行
+  \item nova-manage db sync実行
+\end{itemize}
+
+Kiloリリースのリポジトリを追加してインストールしたnova-apiにはnova-manageのオプションにmigrate\_flavor\_dataがあった。キタコレ！と思って、さっそくnova-manage db migrate\_flavor\_dataを実行した。そしたら成功したもんだから、そのまま一旦Kiloリリースまで上げてからLibertyリリースにしようと思って、Kiloリリース時点までdb syncした。\\[1ex]
+
+\noindent
+そしたら、またエラーが出た:(\\[1ex]
+
+flavor のテーブルのスキーマがおかしいという旨のエラーだった。嘘だろって思ったがマジだった。エラーの内容と状況を整理すると、\textbf{Kiloリリースのdb syncの後で、かつLibertyリリースのdb syncの前に、nova-manage db migrate\_flavor\_dataを実行しろ}、ということである。\\[1ex]
+
+\noindent
+つまり、正解はこうだ。
+
+\begin{itemize}
+  \item Kiloリリースのnova-apiインストール
+  \item nova-manage db sync実行
+  \item nova-manage db migrate\_flavor\_data実行
+  \item Libertyリリースのnova-apiインストール
+  \item nova-manage db sync実行
+\end{itemize}
+
+
 \subsubsection{apt 壊れた}
+この時点でまたもやDBのスキーマは中途半端に変更されてしまっていたため、Junoリリース時点まで戻して、またDBのドロップ(2度目)とリストアを行った。その後、Junoリリース時点のnova-apiに戻そうとしたのだが、\textbf{今度はaptが壊れた....}。\\[1ex]
+
+JunoとKiloとLibertyを何度も行き来していたせいで、依存パッケージがおかしなことになりインストールも削除もできなくなってしまった。しょうがないので、dpkgコマンドで全3バージョン(Juno, Kilo, Liberty)のNovaに依存が貼られている依存パッケージ全てを削除した。そしたらaptが動くようになったので、またJunoリリースまで戻して再チャレンジすることとなる。\\[1ex]
+
+実はこれやってる最中に、この前テレビでやっていた「学校へ行こう!」の軟式globeの曲が脳内でループしていた。\\[1ex]
+
+\noindent
+「アホだなぁー」「そうだよアホだよ」\\[1ex]
+
+\noindent
+名曲である。\\[1ex]
+
+\noindent
+\textbf{. . . 閑話休題 . . .}
+
 
 \subsection{nova-api アップグレード (Nova db sync 成功編)}
 \subsection{neutron-server アップグレード}
