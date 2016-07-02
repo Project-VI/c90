@@ -240,17 +240,153 @@ JunoとKiloとLibertyを何度も行き来していたせいで、依存パッ�
 
 
 \subsection{nova-api アップグレード (Nova db sync 成功編)}
-\subsection{neutron-server アップグレード}
-\subsection{Nova / Neutron の残りのパッケージのアップグレード}
-\subsection{ロードバランサの紐付け}
-\subsection{Horizon アップグレード}
-\subsubsection{deb パッケージの謎}
-\subsection{アップグレードの終わり}
+\noindent
+ここまでを踏まえて、成功した手順を記す。\\[1ex]
 
-\section{その後の話}
-\subsection{RFC3442 (クラスレス静的ルート) 問題}
+\noindent
+Kiloリリースをインストールする。
+
+\begin{lstlisting}
+  $ sudo echo "deb http://ubuntu-cloud.archive.canonical.com/ubuntu trusty-updates/kilo main" \
+      > /etc/apt/sources.list.d/cloudarchive-kilo.list
+  $ sudo apt-get update
+  $ sudo apt-get install nova-api python-novaclient
+\end{lstlisting}
+
+\noindent
+Kiloリリース時点のスキーマまでマイグレーションする。
+\begin{lstlisting}
+  $ sudo service nova-api restart
+  $ sudo su -s /bin/sh -c "nova-manage db sync" nova
+  $ sudo su -s /bin/sh -c "nova-manage db migrate_flavor_data" nova
+\end{lstlisting}
+
+\noindent
+その後、Libertyリリースに上げる。
+\begin{lstlisting}
+  $ sudo echo "deb http://ubuntu-cloud.archive.canonical.com/ubuntu trusty-updates/liberty main" \
+      > /etc/apt/sources.list.d/cloudarchive-liberty.list
+  $ sudo apt-get update
+  $ sudo apt-get install nova-api python-novaclient
+\end{lstlisting}
+
+\noindent
+Libertyリリース時点のスキーマまでマイグレーションする。
+\begin{lstlisting}
+  $ sudo service nova-api restart
+  $ sudo su -s /bin/sh -c "nova-manage db sync" nova
+\end{lstlisting}
+
+これで、nova-apiのアップグレードとNovaのDBのマイグレーションが完了となる。ちなみに、このDBマイグレーション手順については、実はKiloのリリースノートに1行だけ記載があった。が、それでもあまり親切な書き方ではないから、事前に確認していてもハマってたと思う。
+
+\subsection{neutron-server アップグレード}
+\noindent
+nova-apiがアップグレードできたら、次にneutron-serverをアップグレードする。\\[1ex]
+
+Keystone同様にConfiguration Referenceや公式のインストールガイドを確認しながら環境にあったneutron.confや、その他諸々を配置しよう。なお、Open vSwitchはml2の設定ファイルが分割されているので注意が必要である。\\[1ex]
+
+\noindent
+その後、Neutronのdb syncを行う。
+\begin{lstlisting}
+  $ sudo service neutron-server restart
+  $ sudo su -s /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf \
+      --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron
+\end{lstlisting}
+
+\noindent
+エラーが出なければNeutronのDBはLibertyリリース時点のスキーマまでマイグレーションされている。
+
+\subsection{Nova / Neutron の残りのパッケージのアップグレード}
+ここまで完了すれば後は残っているパッケージを全てアップグレードしよう。ここから先は、特に問題は起こらない(はず)である。何をどうやってアップグレードするのかについては各環境に依存するので、ここでは記さないこととする。
+
+\subsection{ロードバランサの紐付け}
+Keystoneのフロントにあるロードバランサの5000番ポートに対してリアルサーバを紐付ける。
+
+\subsection{Horizon アップグレード}
+Horizonは、ぶっちゃけると、他のコンポーネントとバージョンが食い違っていても全く問題ないので、OpenStackがリリースされるたびにアップグレードしても何も問題ない。\\[1ex]
+
+が、Libertyリリースに限って言うと、\textbf{というか、Libertyリリースのdebパッケージに限って言うと}、アップグレードが失敗する。\\[1ex]
+
+なぜうまくいかなかったのかについて詳しい事象は判明していない。とりあえず、起こった事象を書き記すことにした。申し訳ない。
+
+\subsubsection{deb パッケージの謎}
+自分は今回deb パッケージが新規インストール時とアップグレード時で挙動が違うという事象に遭遇した。普通は(きっと)そんなことはない(はず)なのだが、LibertyリリースのHorizonのdebパッケージに限って言えば、挙動が違った。\\[1ex]
+
+Junoリリースで稼働していたHorizonのサーバで、apt-get upgrade、もしくはapt-get install openstack-dashboardでHorizonのバージョンを上げた場合、CSSが読み込まれず、Horizonが2000年あたりの何とも簡素なWebページのようなデザインになる。\\[1ex]
+
+Horizonもコンポーネントが増えてごちゃごちゃしてきたから、ここで一つ Simple is Best ってことでデザイン変更したのかなって一瞬だけ思ったが、そんなことは全く無かった。いくらなんでも時代に逆行しすぎである。\\[1ex]
+
+\noindent
+\textbf{. . . 閑話休題 . . .}
+
+ひとまずアップグレードプロセスに問題があるのだろうと踏んだので、調べるためにLibertyリリースのdeb-src行をリポジトリに追記して、openstack-dashboardのdebパッケージを落としてくる。
+
+\begin{lstlisting}
+  $ sudo echo "deb-src http://ubuntu-cloud.archive.canonical.com/ubuntu trusty-updates/liberty main" \
+      >> /etc/apt/sources.list.d/cloudarchive-liberty.list
+  $ sudo apt-get update
+  $ sudo apt-get source openstack-dashboard
+  $ tar zxvf horizon_8.0.0-0ubuntu2~cloud0.debian.tar.gz
+  $ cd debian
+\end{lstlisting}
+
+\noindent
+README.sourceを開くと早速以下の様なことが書いてあった。
+
+\begin{lstlisting}
+During the Juno/14.10 development cycle, use of xstatic packages was introduced
+so that CSS, JS and other static assets did not have to be embedded in the
+horizon source tree.
+\end{lstlisting}
+
+\noindent
+怪しい、すごく怪しい。\\[1ex]
+
+ついでに、Icehouseリリースに遡ってソースを落としてくると、今度はREADME.compressionというファイルに以下のことが書いてある。
+
+\begin{lstlisting}
+Until this can be scripted and integrated into package build, updating the
+pre-compressed static CSS and JS requires a some manual steps:
+
+   sudo apt-get install python-lesscpy python-openstack-auth python-compressor
+   quilt pop top
+   ./debian/rules refresh-static-assets
+\end{lstlisting}
+
+\noindent
+ふむ。\\[1ex]
+
+rulesファイルとかちゃんと読めば、きちんとした原因が判明するだろう。が、僕はこの時点で完全に力尽きていた。\\[1ex]
+
+唯一分かっていることは、一度JunoリリースのHorizon(Django含む)のパッケージを全て削除してLibertyリリースのパッケージを入れなおせば、問題なく動くということである。なお、この事象は、JunoからKiloに上げた際には発生しない。JunoからLiberty、もしくはKiloからLibertyにアップグレードした場合にのみ発生するのである。\\[1ex]
+
+\noindent
+というわけで、詳細知ってる人がいたら教えて下さい、お願いします。\\[1ex]
+
+\noindent
+あと、Canonicalの中の人はこのdebパッケージどうにかして下さい。\\[1ex]
+
+\subsection{アップグレードの終わり}
+ここまででOpenStack環境のアップグレードが完了となる。当然だが、こんな作業をマニュアルでやっていたら、いつか腱鞘炎になる。それが嫌なら、ChefとかPuppetとかAnsibleとかそういうの使ってやったほうがいい。たぶん。\\[1ex]
+
+\noindent
+お疲れ様でした
 
 \section{アップグレード作業から得た教訓}
+\noindent
+\textbf{1. 事前の検証は絶対必要}\\[1ex]
+
+本番環境でのアップグレードを実施するまでに、本番と同等構成による新規でLiberty構築を1回と、事前にJunoの同等構成の検証環境を作っておき、そこからのアップグレードテストを1回やった。ちなみに今回の話は検証環境で起こった話です。おかげで本番環境ではすんなりアップグレードが出来ました。
+
+\noindent
+\textbf{2. どうしてもアップグレードが必要というわけでないのならやらないに越したことはない}\\[1ex]
+
+penStackの各バージョンはリリースから約14ヶ月でEOLを迎える。つまり、リリースから約14ヶ月はBugfixがバックポートされるので、それでお茶を濁すというのもあり。もしくは、リリースタイイングごとにKeystoneだけアップグレードして、その他のコンポーネントはRegionをきちんと定義して小さくOpenStackクラスターを作っていくという手もある。当然、構築したOpenStackクラスターそのもののEOLを定義していく必要がある。
+
+\noindent
+\textbf{3. 問題はアップグレード後にも起こる}\\[1ex]
+
+アップグレード後に初めて気付く問題もたくさんある。事前にLaunchpadからバグやKnown Issueは確認して、アップグレードをするかどうかの判断基準にするとよい。とはいえ、リリース直後にアップグレードするとなると、それはただの人柱であり、バグがそもそもLaunchpadに登録されてない、なんてこともある。
 
 \chapter{あとがき}
 
