@@ -6,9 +6,13 @@
 \usepackage{url}
 
 \lstset{basicstyle={\footnotesize\ttfamily}}
+\lstset{breaklines=true}
 
-\setlength{\textwidth}{\fullwidth}
-\setlength{\evensidemargin}{\oddsidemargin}
+\renewcommand{\kanjifamilydefault}{\gtdefault}
+\renewcommand{\familydefault}{\sfdefault}
+
+%\setlength{\textwidth}{\fullwidth}
+%\setlength{\evensidemargin}{\oddsidemargin}
 
 \begin{document}
 
@@ -32,7 +36,7 @@
 なお、そんな PayPal 様のセッションはこちら。
 
 \begin{quote}
-	PayPal's Cloud Journey From Folsom to Kilo -- What We Learned in the Upgrade
+	PayPal's Cloud Journey From Folsom to Kilo - What We Learned in the Upgrade
 \end{quote}
 
 アップグレード前の構成は、 OS が Ubuntu 14.04 、 OpenStack のバージョンが Juno 、 Hypervisor が KVM 、 Neutron Driver が VLAN + OVS で L3 Agent は稼働させていない構成となる。
@@ -387,6 +391,42 @@ penStackの各バージョンはリリースから約14ヶ月でEOLを迎える�
 \textbf{3. 問題はアップグレード後にも起こる}\\[1ex]
 
 アップグレード後に初めて気付く問題もたくさんある。事前にLaunchpadからバグやKnown Issueは確認して、アップグレードをするかどうかの判断基準にするとよい。とはいえ、リリース直後にアップグレードするとなると、それはただの人柱であり、バグがそもそもLaunchpadに登録されてない、なんてこともある。
+
+\chapter{OpenStack一問一答}
+
+\section*{2つのネットワークに同じVLAN付けたいんですが}
+\section*{KVMってなんですか}
+\section*{Libvirtってなんですか}
+\section*{これだけ覚えておけばOKみたいなのありますか}
+\section*{何か本とかないですか}
+\section*{コマンド覚えられないんですが}
+\section*{Horizon使いにくいんですが}
+\section*{Horizon改造したいです}
+\section*{SSHできません}
+\section*{Pingできません}
+\section*{Webコンソール出ません}
+\section*{起動途中で変な状態で止まっちゃいました}
+\section*{No available hostみたいなエラーが出たんですが}
+\section*{DHCP使わないとダメなんですか？}
+\section*{VLANとかよくわかんないんですがFlatにすればいいです？}
+\section*{Ubuntuじゃないとだめなんですか？CentOSは？}
+\section*{本番で使ってるひといるんですか？}
+\section*{OpenStackって大丈夫なんですか？}
+\section*{誰が作ってるんですか？}
+\section*{さくっとためしたいんですが}
+\section*{いいドキュメントないですか？}
+\section*{なんか変な仕様なんですが、これ誰が決めてるんですか？}
+\section*{どうやって開発してるんですが}
+\section*{入れたはいいけど監視したいです}
+\section*{トラブったら誰に聞けばいいんですか}
+\section*{どうやってインストールするんですか}
+\section*{とりあえず勉強しておくといいことありますか}
+\section*{仮想マシンが重いです}
+\section*{ネットワークが遅いです}
+\section*{ディスクに制限をつけたいです}
+\section*{帯域制限したいです}
+\section*{マイグレーションってすごくないですか}
+\section*{novaが何でneutronが何でとか覚えられません}
 
 \chapter{あとがき}
 
