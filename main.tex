@@ -394,12 +394,38 @@ penStackの各バージョンはリリースから約14ヶ月でEOLを迎える�
 
 \chapter{OpenStack一問一答}
 
-\section*{2つのネットワークに同じVLAN付けたいんですが}
-\section*{KVMってなんですか}
-\section*{Libvirtってなんですか}
-\section*{これだけ覚えておけばOKみたいなのありますか}
-\section*{何か本とかないですか}
-\section*{コマンド覚えられないんですが}
+\section*{Q. 2つのネットワークに同じVLAN付けたいんですが}
+\subsection*{A. 無理です}
+なんとできません。コードどの辺だったっけ…。
+
+\section*{Q. KVMってなんですか}
+\subsection*{A. 仮想マシンのアクセラレーターです}
+割と勘違いされていることが多いのですが、KVMは「アクセラレーター」です。仮想マシンのアクセラレーターの機能を持つカーネルモジュールです。いや、LinuxでやるVMのことでしょ、と思うかもしれませんが、所謂「仮想マシン」と言った時のイメージは、KVMではなく、正確にはQEMUです。QEMUがそのままでは余りに遅いので、KVMというアクセラレーターを使って早くしています。つまり、QEMUさえあれば、KVMはなくてもOpenStackは（動くには）動きます。
+
+とはいえ、KVMとQEMUがごっちゃになって巷では認識されているは事実です。大抵の場合、KVMと言ったらQEMUのことを意図していると考えて差し支えない感もあります。
+
+\section*{Q. そのQEMUってなんですか}
+\subsection*{A. 仮想化プログラムです}
+位置付けとしては、VirtualBoxとかvmware Playerと同じです。
+
+\section*{Q. libvirtってなんですか}
+\subsection*{A. 仮想マシン操作API群です}
+QEMU/KVM、ESXi, behyve, VirtualBoxなどなど、世の中には沢山の仮想化ツールがありますよね。これらの違いを意識せず、ラッパーAPIのような形で統一的に操作できたらいいですよね。と、いうわけでできたのがlibvirtです。
+
+OpenStackでは、novaがlibvirtが提供するAPIを使用することにより、仮想マシンのライフサイクルが管理されます。novaはlibvirtのラッパー、という見方もできます。ただ、QEMU独自の機能やQEMUにはあるけどlibvirtからはまだ使えない機能なんかもありますので、そういう機能を使うときにはQEMUのプロセス間通信を使ってlibvirtをパスすることもあります。
+
+\section*{Q. これだけ覚えておけばOKみたいなのありますか}
+\subsection*{A. 甘え}
+そんなものはありません。知らないことはすべて知る必要があります。強いて言えば、OpenStackのことだけ知っておけばOKです。
+
+\section*{Q. 何か本とかないですか}
+\subsection*{A. あります}
+実は結構あります。
+
+\section*{Q. コマンド覚えられないんですが}
+\subsection*{A. --help}
+もうこれは\verb|--help|するしかありません。
+
 \section*{Horizon使いにくいんですが}
 \section*{Horizon改造したいです}
 \section*{SSHできません}
