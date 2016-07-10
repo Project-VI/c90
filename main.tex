@@ -4,12 +4,18 @@
 \usepackage{listings}
 \usepackage{inconsolata}
 \usepackage{url}
+\usepackage{titlesec}
+\usepackage[dvipdfmx]{color}
 
 \lstset{basicstyle={\footnotesize\ttfamily}}
 \lstset{breaklines=true}
 
 \renewcommand{\kanjifamilydefault}{\gtdefault}
 \renewcommand{\familydefault}{\sfdefault}
+\renewcommand{\baselinestretch}{1.1}
+
+\definecolor{gray75}{gray}{0.75}
+\titleformat{\chapter}[hang]{\Huge\bfseries}{\thechapter\textcolor{gray75}{｜}}{0pt}{\Huge\bfseries}
 
 %\setlength{\textwidth}{\fullwidth}
 %\setlength{\evensidemargin}{\oddsidemargin}
@@ -563,7 +569,13 @@ OpenStackコミュニティーが公式で提供しているインストール�
 \subsection*{A. Open vSwitchとかだと簡単にできます}
 Open vSwitchのミラーポートとかで検索すると割と出てきます。これをサービス化して、neutronのサブモジュール（Tap as a service）としてコンポーネント化する計画もあります。
 
+\section*{Q. IPってどういう順番で振られるんですか}
+\subsection*{A. 前から順番で、最後まで行ったら最初に戻ります}
+インターフェースに割り当てられるIPはサブネットの前から順番です。サブネットが.0/24なら、.1から始まり、.254まで来ると最初に戻ります。途中インスタンスが消えても、そのIPは.254まで行って戻った時まで再利用されません。
+
 \chapter{あとがき}
+
+\newpage
 
 \thispagestyle{empty}
 \vspace*{\stretch{1}}
