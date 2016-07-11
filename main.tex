@@ -7,12 +7,15 @@
 \usepackage{titlesec}
 \usepackage[dvipdfmx]{color}
 
-\lstset{basicstyle={\footnotesize\ttfamily}}
+\lstset{basicstyle={\small\ttfamily}}
+\lstset{frame=single}
 \lstset{breaklines=true}
+\lstset{lineskip=-1pt}
+\lstset{framesep=10pt}
 
 \renewcommand{\kanjifamilydefault}{\gtdefault}
 \renewcommand{\familydefault}{\sfdefault}
-\renewcommand{\baselinestretch}{1.1}
+\renewcommand{\baselinestretch}{1.2}
 
 \definecolor{gray75}{gray}{0.75}
 \titleformat{\chapter}[hang]{\Huge\bfseries}{\thechapter\textcolor{gray75}{｜}}{0pt}{\Huge\bfseries}
@@ -25,8 +28,6 @@
 \tableofcontents
 
 \chapter{はじめに}
-
-\setcounter{page}{1}
 
 \chapter{OpenStackアップグレード超入門}
 本章は、 Qiita に投稿した OpenStack Advent Calendar 2015 の 12 月 3 日の記事である「 OpenStack をアップグレードしたら心臓止まりかけた話」という物語を改めて書き記した章である(ただし、改訂版というわけではない)。
@@ -400,33 +401,38 @@ penStackの各バージョンはリリースから約14ヶ月でEOLを迎える�
 
 \chapter{OpenStack一問一答}
 
+最後にOpenStackに関するよくある質問をQ\&A型式でずらずらと並べてみることにしました。
+
 \section*{Q. 2つのネットワークに同じVLAN付けたいんですが}
-\subsection*{A. 無理です}
-なんとできません。コードどの辺だったっけ…。
+\subsection*{A. できません}
+なんとできません。これはテナントネットワークを新規作成をする際に、neutronが内部で指定されたVLANが他のテナントネットワークで使用されていないかチェックするようになっているからです。
+
+コードどの辺だったっけ…。
 
 \section*{Q. KVMってなんですか}
 \subsection*{A. 仮想マシンのアクセラレーターです}
-割と勘違いされていることが多いのですが、KVMは「アクセラレーター」です。仮想マシンのアクセラレーターの機能を持つカーネルモジュールです。いや、LinuxでやるVMのことでしょ、と思うかもしれませんが、所謂「仮想マシン」と言った時のイメージは、KVMではなく、正確にはQEMUです。QEMUがそのままでは余りに遅いので、KVMというアクセラレーターを使って早くしています。つまり、QEMUさえあれば、KVMはなくてもOpenStackは（動くには）動きます。
+割と勘違いされていることが多いのですが、KVMは「アクセラレーター」です。仮想マシンアクセラレーターの機能を持つカーネルモジュールです。いや、LinuxでやるVMのことでしょ、と思うかもしれませんが、いわゆる「仮想マシン」と言った時のイメージは、KVMではなく、正確にはQEMUが担っています。QEMUがそのままではあまりに遅いので、KVMというアクセラレーターを使って速くしているのです。つまり、QEMUさえあればKVMはなくてもOpenStackは（動くには）動きます。
 
 とはいえ、KVMとQEMUがごっちゃになって巷では認識されているは事実です。大抵の場合、KVMと言ったらQEMUのことを意図していると考えて差し支えない感もあります。
 
 \section*{Q. そのQEMUってなんですか}
-\subsection*{A. 仮想化プログラムです}
-位置付けとしては、VirtualBoxとかvmware Playerと同じです。
+\subsection*{A. 仮想マシンです}
+位置付けとしては、VirtualBoxとかvmware Playerと同じです。仮想マシンが起動しているコンピュートホスト上でpsコマンドなどでプロセスを見てみると、仮想マシンごとにqemuのプロセスが起動していることが確認できると思います。いわゆる仮想マシン構成の「設定ファイル」のようなものは無いので、構成に関する情報を起動時の引数
+ですべて指定するため、コマンドがとんでもなく長くなる傾向があります。
 
 \section*{Q. libvirtってなんですか}
 \subsection*{A. 仮想マシン操作API群です}
-QEMU/KVM、ESXi, behyve, VirtualBoxなどなど、世の中には沢山の仮想化ツールがありますよね。これらの違いを意識せず、ラッパーAPIのような形で統一的に操作できたらいいですよね。と、いうわけでできたのがlibvirtです。
+QEMU/KVM、ESXi, behyve, VirtualBoxなどなど、世の中には沢山の仮想化環境がありますよね。これらの違いを意識せず、ラッパーAPIのような形で統一的に操作できたらいいですよね。と、いうわけでできたのがlibvirtです。もとはC言語のライブラリとして開発が続いており、多言語のラッパーも多く存在します。特にpythonはオリジナルのC言語版とほぼ同等の地位をもってメンテナンスされています。
 
-OpenStackでは、novaがlibvirtが提供するAPIを使用することにより、仮想マシンのライフサイクルが管理されます。novaはlibvirtのラッパー、という見方もできます。ただ、QEMU独自の機能やQEMUにはあるけどlibvirtからはまだ使えない機能なんかもありますので、そういう機能を使うときにはQEMUのプロセス間通信を使ってlibvirtをパスすることもあります。
+OpenStackでは、novaがlibvirtが提供するAPIを使用することにより、仮想マシンのライフサイクルが管理されます。novaはlibvirtのラッパー、という見方でも問題ない位でしょう。。ただ、QEMU独自の機能やQEMUにはあるけどlibvirtからはまだ使えない機能なんかもありますので、そういう機能を使うときにはQEMUのプロセス間通信を使ってQEMUの動作を直接変更し、libvirtをパスすることもあります。
 
 \section*{Q. これだけ覚えておけばOKみたいなのありますか}
 \subsection*{A. 甘え}
-そんなものはありません。知らないことはすべて知る必要があります。強いて言えば、OpenStackのことだけ知っておけばOKです。
+そんなものはありません。知らないことはすべて知る必要があります。強いて言えば、OpenStackのことだけ知っておけばOKです。KVMの事はあまり知る必要はありませんが、QEMUについては少し勉強しておくと良いでしょう。あとは、OpenStackではとになくネットワークの構築でハマります。ネットワークの知識が必要になるでしょう。
 
 \section*{Q. 何か本とかないですか}
 \subsection*{A. あります}
-実は結構あります。
+実は結構あります。Amazonとかで探すと結構出てくると思います。本家OpenStack Foundation公認の「日本OpenStackユーザー会」で書かれた本もあります。
 
 \section*{Q. コマンド覚えられないんですが}
 \subsection*{A. --help}
